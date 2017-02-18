@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+/* ======================================================================
+*  Copyright (c) 2014 Qualcomm Technologies, Inc. All Rights Reserved.
+*  QTI Proprietary and Confidential.
+*  =====================================================================
+*
+* @file    activity_camera_preview.xml
+* @brief   Android application manifest file for DeviceInfo API.
+*/-->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#000000"
+    android:gravity="top"
+    tools:context=".CameraPreviewActivity">
+
+    <FrameLayout
+        android:id="@+id/camera_preview"
+        android:layout_width="1dp"
+        android:layout_height="1dp"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true" />
+
+    <Button
+        android:id="@+id/Record"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Record"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true" />
+
+    <ImageView
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        app:srcCompat="@android:drawable/presence_video_busy"
+        android:scaleType="centerCrop"
+
+        android:id="@+id/imageView"
+        android:background="@android:color/transparent"
+        android:adjustViewBounds="true"
+        android:cropToPadding="true"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true" />
+
+    <com.example.matthew.pictureviewingdataanalysis.backandforth
+        android:id="@+id/backandforth"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/transparent"
+        android:layout_alignParentEnd="true">
+
+        <TextView
+            android:id="@+id/coordinateText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="text"
+            android:textAlignment="center"
+            android:layout_alignParentTop="true"
+            android:layout_marginTop="158dp"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentStart="true" />
+
+    </com.example.matthew.pictureviewingdataanalysis.backandforth>
+
+</RelativeLayout>

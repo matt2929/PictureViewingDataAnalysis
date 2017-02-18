@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/PictureViewingDataAnalysis.iml" filepath="$PROJECT_DIR$/PictureViewingDataAnalysis.iml" />
+      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/sd-sdk-facial-processing/sd-sdk-facial-processing.iml" filepath="$PROJECT_DIR$/sd-sdk-facial-processing/sd-sdk-facial-processing.iml" />
+    </modules>
+  </component>
+</project>
