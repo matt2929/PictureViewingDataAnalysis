@@ -14,7 +14,6 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.PorterDuff.Mode;
 import android.hardware.Camera;
@@ -29,12 +28,9 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 import android.view.Menu;
-import android.view.MotionEvent;
 import android.view.OrientationEventListener;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.View.OnTouchListener;
-import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -60,7 +56,11 @@ public class CameraPreviewActivity extends Activity implements Camera.PreviewCal
     FacialProcessing faceProc;
     FaceData[] faceArray = null;// Array in which all the face data values will be returned for each face detected.
     View myView;
-    CalibrationBox calibrationBox = new CalibrationBox();
+    //calibration////
+    Calibration9Point calibration9Point = new Calibration9Point();
+    NinePointCalibrationView ninePointCalibration;
+    boolean calibrationAvailable = false;
+    ////////////////
     ImageView imageView;
     boolean canRecord = false;
     Canvas canvas = new Canvas();
@@ -91,7 +91,6 @@ public class CameraPreviewActivity extends Activity implements Camera.PreviewCal
     PointF gazePointValue = null;
     private final String TAG = "CameraPreviewActivity";
     // TextView Variables
-    backandforth backandforth;
     int surfaceWidth = 0;
     int surfaceHeight = 0;
     MovingAverage movingAverageX, movingAverageY;
@@ -109,17 +108,20 @@ public class CameraPreviewActivity extends Activity implements Camera.PreviewCal
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera_preview);
         myView = new View(CameraPreviewActivity.this);
-        // Create our Preview view and set it as the content of our activity.
         record = (Button) findViewById(R.id.Record);
         record.setTextColor(Color.GREEN);
         preview = (FrameLayout) findViewById(R.id.camera_preview);
-        backandforth = (backandforth) findViewById(R.id.backandforth);
         coordinateText = (TextView) findViewById(R.id.coordinateText);
         imageView = (ImageView) findViewById(R.id.imageView);
+        ninePointCalibration = (NinePointCalibrationView) findViewById(R.id.pointcalibration);
+        //save data
         saveCSV = new SaveCSV(getApplication());
+        //save data
+        //clocks
         handler = new Handler();
         clock2 = new Clock2(handler);
         clock2.run();
+        ///smoothing algorithm
         movingAverageX = new MovingAverage(15);
         movingAverageY = new MovingAverage(15);
         // Check to see if the FacialProc feature is supported in the device or no.
@@ -160,7 +162,7 @@ public class CameraPreviewActivity extends Activity implements Camera.PreviewCal
                                               } else {
                                                   saveCSV = new SaveCSV(getApplicationContext());
                                                   recordingMovement = true;
-                                                  backandforth.start();
+                                                  ninePointCalibration.start();
                                                   record.setTextColor(Color.YELLOW);
                                               }
                                           } else {
@@ -215,7 +217,7 @@ public class CameraPreviewActivity extends Activity implements Camera.PreviewCal
             imageView.setImageDrawable(getResources().getDrawable(android.R.drawable.presence_video_busy));
 
         }
-        if (gazePointValue != null) {
+        if (gazePointValue != null&&canRecord) {
             double x = Math.round(gazePointValue.x * 100.0) / 100.0;// Rounding the gaze point value.
             double y = Math.round(gazePointValue.y * 100.0) / 100.0;
             movingAverageX.update(x);
@@ -223,8 +225,10 @@ public class CameraPreviewActivity extends Activity implements Camera.PreviewCal
             fftX.addData(x);
             fftY.addData(y);
             if (recordingMovement) {
-                saveCSV.saveData(numFaces, smileValue, leftEyeBlink, rightEyeBlink, faceRollValue, faceYawValue, facePitchValue, horizontalGazeAngle, verticalGazeAngle, movingAverageX.getCurrent(),
-                        movingAverageY.getCurrent(), x, y, fftX.getFFTMag(), fftY.getFFTMag(),backandforth.getState());
+                if (ninePointCalibration.getCurrentDot()!=-1) {
+                    saveCSV.saveData(numFaces, smileValue, leftEyeBlink, rightEyeBlink, faceRollValue, faceYawValue, facePitchValue, horizontalGazeAngle, verticalGazeAngle, movingAverageX.getCurrent(),
+                            movingAverageY.getCurrent(), x, y, fftX.getFFTMag(), fftY.getFFTMag(), ninePointCalibration.getCurrentDot());
+                }
             }
         }
     }
@@ -439,25 +443,24 @@ public class CameraPreviewActivity extends Activity implements Camera.PreviewCal
             int width = metrics.widthPixels;
             int height = metrics.heightPixels;
             counter++;
-            backandforth.invalidate();
+            ninePointCalibration.invalidate();
             if (recordingMovement) {
-                calibrationBox.recordCalibration(movingAverageX.getCurrent(), movingAverageY.getCurrent(), backandforth.getState());
-                if (backandforth.getState() == 8) {
+                calibration9Point.recordCalibration(movingAverageX.getCurrent(), movingAverageY.getCurrent(), ninePointCalibration.getCurrentDot());
+                if (!ninePointCalibration.isRunningCalibration()) {
                     Toast.makeText(getApplicationContext(), "Saved", Toast.LENGTH_LONG).show();
                     recordingMovement = !recordingMovement;
                     record.setTextColor(Color.GREEN);
-                } else {
+                    calibrationAvailable = true;
                 }
             } else {
-                if (backandforth.getState() == 9) {
-                    double[] coordinates = calibrationBox.getXYPoportional(movingAverageX.getCurrent(), movingAverageY.getCurrent(), width, height);
-                    backandforth.setBallPosition(coordinates[0], coordinates[1]);
+                if (calibrationAvailable) {
+                    double[] coordinates = calibration9Point.getXYPoportional(movingAverageX.getCurrent(), movingAverageY.getCurrent(), width, height);
+                    ninePointCalibration.setBallPosition(coordinates[0], coordinates[1]);
                     coordinateText.setText("gazewidthX: " + coordinates[0] + "gazewidthY" + coordinates[1]);
-
                 }
             }
             handler.postDelayed(this, 60);
         }
     }
-
 }
+

@@ -8,24 +8,27 @@ import java.util.ArrayList;
  * Created by Matthew on 2/16/2017.
  */
 
-public class Calibration5Point {
-    ArrayList<ArrayList<Double>> dataX = new ArrayList<>();
-    ArrayList<ArrayList<Double>> dataY = new ArrayList<>();
-    boolean calibrationValuesSet = false;
-    double[] averagesX = new double[6];
-    double[] averagesY = new double[6];
-    double centerPointX = 0, centerPointY = 0, topLeftX = 0, topLeftY = 0, topRightX = 0, topRightY = 0, downLeftX = 0, downLeftY = 0, downRightX = 0, downRightY = 0;
+public class Calibration9Point {
+    private ArrayList<ArrayList<Double>> dataX = new ArrayList<>();
+    private ArrayList<ArrayList<Double>> dataY = new ArrayList<>();
+    private boolean calibrationValuesSet = false;
+    private double[] averagesX = new double[9];
+    private double[] averagesY = new double[9];
 
-    public Calibration5Point() {
-        for (int i = 0; i < 6; i++) {
+    private double centerPointX = 0, centerPointY = 0, topLeftX = 0, topLeftY = 0, topRightX = 0, topRightY = 0, downLeftX = 0, downLeftY = 0, downRightX = 0, downRightY = 0;
+
+    public Calibration9Point() {
+        for (int i = 0; i < 9; i++) {
             dataX.add(new ArrayList<Double>());
             dataY.add(new ArrayList<Double>());
         }
     }
 
     public void recordCalibration(double x, double y, int state) {
-        dataX.get(state).add(x);
-        dataY.get(state).add(y);
+        if (state != -1) {
+            dataX.get(state).add(x);
+            dataY.get(state).add(y);
+        }
     }
 
     public double[] getXYPoportional(double xGaze, double yGaze, double width, double height) {
