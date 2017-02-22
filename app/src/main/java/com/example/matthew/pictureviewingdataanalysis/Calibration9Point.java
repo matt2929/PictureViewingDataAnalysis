@@ -14,8 +14,9 @@ public class Calibration9Point {
     private boolean calibrationValuesSet = false;
     private double[] averagesX = new double[9];
     private double[] averagesY = new double[9];
+    double leftX=0,midX=0,rightX=0,topY=0,midY=0,bottomY=0;
 
-    private double centerPointX = 0, centerPointY = 0, topLeftX = 0, topLeftY = 0, topRightX = 0, topRightY = 0, downLeftX = 0, downLeftY = 0, downRightX = 0, downRightY = 0;
+
 
     public Calibration9Point() {
         for (int i = 0; i < 9; i++) {
@@ -43,23 +44,34 @@ public class Calibration9Point {
 
                 Log.e("average", ":" + s + "x:" + averagesX[s] + "\n" + "y:" + averagesY[s]);
             }
-            centerPointX = averagesX[3];
-            centerPointY = averagesY[3];
-            topLeftX = averagesX[1];
-            topLeftY = averagesY[1];
-            topRightX = averagesX[2];
-            topRightY = averagesY[2];
-            downRightX = averagesX[4];
-            downRightY = averagesY[4];
-            downLeftX = averagesX[5];
-            downLeftY = averagesY[5];
+            topY=(averagesY[0]+averagesY[1]+averagesY[2])/3.0;
+            midY=(averagesY[3]+averagesY[4]+averagesY[5])/3.0;
+            bottomY=(averagesY[6]+averagesY[7]+averagesY[8])/3.0;
+            leftX=(averagesX[0]+averagesX[3]+averagesX[6])/3.0;
+            midX=(averagesX[1]+averagesX[4]+averagesX[7])/3.0;
+            rightX=(averagesX[2]+averagesX[5]+averagesX[8])/3.0;
             calibrationValuesSet = true;
         }
+        double x=0;
+        double y=0;
+        if(xGaze<=midX){
+            x=(Math.abs(leftX-xGaze)*(width/2))/(Math.abs(midX-leftX));
+        }else{
+            x=(width/2)+((Math.abs(midX-xGaze)*(width/2))/(Math.abs(rightX-midX)));
+        }
+        if(yGaze<=midY){
+            y=(Math.abs(topY-yGaze)*(height/2))/Math.abs(midY-topY);
+        }else{
+            y=(height/2)+(Math.abs(midY-yGaze)*(height/2))/Math.abs(midY-bottomY);
+        }
+        return new double[]{x,y};
+    }
 
-        double gazeWidth = Math.abs(Math.abs(((topLeftX + downLeftX) / 2)) - (Math.abs(((topRightX + downRightX) / 2))));
-        double gazeHeight = Math.abs(Math.abs(((topLeftY + topRightY) / 2)) - (Math.abs(((downLeftY + downRightY) / 2))));
-        double gazeOffsetX = Math.abs(((topLeftX + downLeftX) / 2) - xGaze);
-        double gazeOffsetY = Math.abs(((topLeftY + topRightY) / 2) - yGaze);
-        return new double[]{(gazeOffsetX*width)/gazeWidth, (gazeOffsetY*width)/gazeHeight};
+    public String getPoints(){
+        String s="";
+        for(int i=0;i<averagesX.length;i++){
+            s+=i+"[x:"+averagesX[i]+"y:"+averagesY[i]+"]\n";
+        }
+        return s;
     }
 }
