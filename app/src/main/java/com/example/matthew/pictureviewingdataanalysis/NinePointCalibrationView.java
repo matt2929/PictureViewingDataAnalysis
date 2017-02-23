@@ -16,8 +16,8 @@ public class NinePointCalibrationView extends RelativeLayout {
     private Paint paintYellow, paintRed;
     private float positionX = 1, positionY = 1;
     private Point[] points;
-    private final int GAZETIME = 5000, MOVEMENTTIME = 2000;
-    private boolean moving = false;
+    private final int GAZETIME = 2000, MOVEMENTTIME = 2000;
+    private boolean moving = true;
     private long startTime = System.currentTimeMillis();
     private int calibrationIndex = 0;
     private boolean runningCalibration = false;
@@ -74,7 +74,7 @@ public class NinePointCalibrationView extends RelativeLayout {
                     moving = false;
                     startTime = System.currentTimeMillis();
                 }
-            }else {
+            } else {
                 paintYellow.setColor(Color.YELLOW);
 
                 if (Math.abs(System.currentTimeMillis() - startTime) > GAZETIME) {
@@ -87,14 +87,15 @@ public class NinePointCalibrationView extends RelativeLayout {
                     }
                 }
             }
-                Point point = points[calibrationIndex];
-                Log.e("data:", "" + "" + point.getX());
-                canvas.drawCircle(point.getX(), point.getY(), 45, paintYellow);
+            Point point = points[calibrationIndex];
+            Log.e("data:", "" + "" + point.getX());
+            canvas.drawCircle(point.getX(), point.getY(), 45, paintYellow);
 
-            } else {
-                setBackgroundColor(Color.TRANSPARENT);
-            }
+        } else {
+            setBackgroundColor(Color.TRANSPARENT);
+            canvas.drawCircle(positionX, positionY, 45, paintYellow);
         }
+    }
 
     public void setBallPosition(double x, double y) {
         positionX = (float) x;

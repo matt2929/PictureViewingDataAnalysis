@@ -14,7 +14,9 @@ public class Calibration9Point {
     private boolean calibrationValuesSet = false;
     private double[] averagesX = new double[9];
     private double[] averagesY = new double[9];
+    private boolean centerCorrection=false;
     double leftX=0,midX=0,rightX=0,topY=0,midY=0,bottomY=0;
+    double midOffsetX,midOffsetY;
 
 
 
@@ -44,27 +46,25 @@ public class Calibration9Point {
 
                 Log.e("average", ":" + s + "x:" + averagesX[s] + "\n" + "y:" + averagesY[s]);
             }
-            topY=(averagesY[0]+averagesY[1]+averagesY[2])/3.0;
+            double buffer=.005;
+            topY=((averagesY[0]+averagesY[1]+averagesY[2])/3.0)+buffer;
             midY=(averagesY[3]+averagesY[4]+averagesY[5])/3.0;
-            bottomY=(averagesY[6]+averagesY[7]+averagesY[8])/3.0;
-            leftX=(averagesX[0]+averagesX[3]+averagesX[6])/3.0;
+            bottomY=((averagesY[6]+averagesY[7]+averagesY[8])/3.0)-buffer;
+            leftX=((averagesX[0]+averagesX[3]+averagesX[6])/3.0)+buffer;
             midX=(averagesX[1]+averagesX[4]+averagesX[7])/3.0;
-            rightX=(averagesX[2]+averagesX[5]+averagesX[8])/3.0;
+            rightX=((averagesX[2]+averagesX[5]+averagesX[8])/3.0)-buffer;
+            double recordedMidX=(rightX-leftX)/2.0;
+            double recordedMidY=(bottomY-topY)/2.0;
+           midOffsetX=(recordedMidX-midX);
+            midOffsetY=(recordedMidY-midY);
             calibrationValuesSet = true;
         }
         double x=0;
         double y=0;
-        if(xGaze<=midX){
-            x=(Math.abs(leftX-xGaze)*(width/2))/(Math.abs(midX-leftX));
-        }else{
-            x=(width/2)+((Math.abs(midX-xGaze)*(width/2))/(Math.abs(rightX-midX)));
-        }
-        if(yGaze<=midY){
-            y=(Math.abs(topY-yGaze)*(height/2))/Math.abs(midY-topY);
-        }else{
-            y=(height/2)+(Math.abs(midY-yGaze)*(height/2))/Math.abs(midY-bottomY);
-        }
-        return new double[]{x,y};
+        x=((xGaze-leftX)*width)/(rightX-leftX);
+        y=((yGaze-topY)*height)/(bottomY-topY);
+        return new double[]{x, y};
+
     }
 
     public String getPoints(){
@@ -73,5 +73,8 @@ public class Calibration9Point {
             s+=i+"[x:"+averagesX[i]+"y:"+averagesY[i]+"]\n";
         }
         return s;
+    }
+    public void setCenterCorection(boolean b){
+        centerCorrection=b;
     }
 }

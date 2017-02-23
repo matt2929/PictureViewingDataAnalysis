@@ -33,8 +33,11 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -70,14 +73,16 @@ public class CameraPreviewActivity extends Activity implements Camera.PreviewCal
     private DrawView drawView;
     private final int FRONT_CAMERA_INDEX = 1;
     private final int BACK_CAMERA_INDEX = 0;
+    CheckBox checkBox;
     boolean recordingMovement = false;
     // boolean clicked = false;
+    ProgressBar progressBar;
     boolean fpFeatureSupported = false;
     boolean cameraPause = false;        // Boolean to check if the "pause" button is pressed or no.
     static boolean cameraSwitch = false;    // Boolean to check if the camera is switched to back camera or no.
     boolean landScapeMode = false;      // Boolean to check if the phone orientation is in landscape mode or portrait mode.
     Button record;
-    FFT fftY = new FFT(16), fftX = new FFT(16);
+    FFT fftY = new FFT(8), fftX = new FFT(8);
     int cameraIndex;// Integer to keep track of which camera is open.
     int smileValue = 0;
     int leftEyeBlink = 0;
@@ -100,6 +105,8 @@ public class CameraPreviewActivity extends Activity implements Camera.PreviewCal
     float rounded;
     Display display;
     int displayAngle;
+    int progressMax = 100;
+    int progressCurent = 0;
 
     private TextView coordinateText;
 
@@ -114,6 +121,9 @@ public class CameraPreviewActivity extends Activity implements Camera.PreviewCal
         coordinateText = (TextView) findViewById(R.id.coordinateText);
         imageView = (ImageView) findViewById(R.id.imageView);
         ninePointCalibration = (NinePointCalibrationView) findViewById(R.id.pointcalibration);
+        progressBar = (ProgressBar) findViewById(R.id.progressBar);
+        progressBar.setMax(progressMax);
+        checkBox = (CheckBox)findViewById(R.id.checkBox);
         //save data
         saveCSV = new SaveCSV(getApplication());
         //save data
@@ -122,8 +132,8 @@ public class CameraPreviewActivity extends Activity implements Camera.PreviewCal
         clock2 = new Clock2(handler);
         clock2.run();
         ///smoothing algorithm
-        movingAverageX = new MovingAverage(15);
-        movingAverageY = new MovingAverage(15);
+        movingAverageX = new MovingAverage(20);
+        movingAverageY = new MovingAverage(20);
         // Check to see if the FacialProc feature is supported in the device or no.
         fpFeatureSupported = FacialProcessing
                 .isFeatureSupported(FacialProcessing.FEATURE_LIST.FEATURE_FACIAL_PROCESSING);
@@ -152,17 +162,25 @@ public class CameraPreviewActivity extends Activity implements Camera.PreviewCal
 
         orientationListener();
         display = ((WindowManager) getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
-
+        checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                calibration9Point.setCenterCorection(isChecked);
+            }
+        });
         record.setOnClickListener(new OnClickListener() {
                                       @Override
                                       public void onClick(View v) {
                                           if (canRecord) {
-                                              if (recordingMovement) {
+                                              if (progressCurent != progressMax) {
 
                                               } else {
+                                                  progressBar.setVisibility(View.GONE);
                                                   saveCSV = new SaveCSV(getApplicationContext());
-                                                  recordingMovement = true;
                                                   ninePointCalibration.start();
+                                                  recordingMovement = true;
+                                                  record.setVisibility(View.GONE);
+                                                  imageView.setVisibility(View.GONE);
                                                   record.setTextColor(Color.YELLOW);
                                               }
                                           } else {
@@ -212,12 +230,18 @@ public class CameraPreviewActivity extends Activity implements Camera.PreviewCal
         if (numFaces > 0) {
             canRecord = true;
             imageView.setImageDrawable(getResources().getDrawable(android.R.drawable.presence_video_online));
+            if (progressCurent + 1 <= progressMax)
+                progressCurent++;
+            progressBar.setProgress(progressCurent);
+
         } else {
+            progressCurent--;
+            progressBar.setProgress(progressCurent);
             canRecord = false;
             imageView.setImageDrawable(getResources().getDrawable(android.R.drawable.presence_video_busy));
 
         }
-        if (gazePointValue != null&&canRecord) {
+        if (gazePointValue != null && canRecord) {
             double x = Math.round(gazePointValue.x * 100.0) / 100.0;// Rounding the gaze point value.
             double y = Math.round(gazePointValue.y * 100.0) / 100.0;
             movingAverageX.update(x);
@@ -225,9 +249,9 @@ public class CameraPreviewActivity extends Activity implements Camera.PreviewCal
             fftX.addData(x);
             fftY.addData(y);
             if (recordingMovement) {
-                if (ninePointCalibration.getCurrentDot()!=-1) {
-                    saveCSV.saveData(numFaces, smileValue, leftEyeBlink, rightEyeBlink, faceRollValue, faceYawValue, facePitchValue, horizontalGazeAngle, verticalGazeAngle, movingAverageX.getCurrent(),
-                            movingAverageY.getCurrent(), x, y, fftX.getFFTMag(), fftY.getFFTMag(), ninePointCalibration.getCurrentDot());
+                if (ninePointCalibration.getCurrentDot() != -1) {
+                    saveCSV.saveData(numFaces, smileValue, leftEyeBlink, rightEyeBlink, faceRollValue, faceYawValue, facePitchValue, horizontalGazeAngle, verticalGazeAngle, movingAverageX.getCurrentNeg(),
+                            movingAverageY.getCurrentNeg(), x, y, fftX.getFFTMag(), fftY.getFFTMag(), ninePointCalibration.getCurrentDot());
                 }
             }
         }
@@ -445,18 +469,17 @@ public class CameraPreviewActivity extends Activity implements Camera.PreviewCal
             counter++;
             ninePointCalibration.invalidate();
             if (recordingMovement) {
-                calibration9Point.recordCalibration(movingAverageX.getCurrent(), movingAverageY.getCurrent(), ninePointCalibration.getCurrentDot());
+                calibration9Point.recordCalibration(movingAverageX.getCurrentNeg(), movingAverageY.getCurrentNeg(), ninePointCalibration.getCurrentDot());
                 if (!ninePointCalibration.isRunningCalibration()) {
                     Toast.makeText(getApplicationContext(), "Saved", Toast.LENGTH_LONG).show();
                     recordingMovement = !recordingMovement;
-                    record.setTextColor(Color.GREEN);
                     calibrationAvailable = true;
                 }
             } else {
                 if (calibrationAvailable) {
-                    double[] coordinates = calibration9Point.getXYPoportional(movingAverageX.getCurrent(), movingAverageY.getCurrent(), width, height);
+                   double[] coordinates = calibration9Point.getXYPoportional(movingAverageX.getCurrentNeg(), movingAverageY.getCurrentNeg(), width, height);
                     ninePointCalibration.setBallPosition(coordinates[0], coordinates[1]);
-                    coordinateText.setText("gazewidthX: " + coordinates[0] + "gazewidthY" + coordinates[1]);
+                    Log.e("coor","gazewidthX: " + coordinates[0] + "gazewidthY" + coordinates[1]);
                 }
             }
             handler.postDelayed(this, 60);

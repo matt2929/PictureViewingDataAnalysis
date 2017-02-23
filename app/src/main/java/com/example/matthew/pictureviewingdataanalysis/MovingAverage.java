@@ -34,6 +34,13 @@ public class MovingAverage {
         for (Double flo : data) {
             sum += flo;
         }
+        return -(sum / (double) max);
+    }
+    public double getCurrentNeg() {
+        float sum = 0;
+        for (Double flo : data) {
+            sum += flo;
+        }
         return (sum / (double) max);
     }
 }
